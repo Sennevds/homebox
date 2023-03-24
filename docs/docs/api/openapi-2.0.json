@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Track, Manage, and Organize your Shit.",
+        "description": "Track, Manage, and Organize your Things.",
         "title": "Homebox API",
         "contact": {
             "name": "Don't"
@@ -417,8 +417,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/repo.ItemSummary"
                         }
@@ -686,7 +686,7 @@
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrorResponse"
+                            "$ref": "#/definitions/mid.ErrorResponse"
                         }
                     }
                 }
@@ -856,8 +856,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/repo.MaintenanceEntry"
                         }
@@ -937,22 +937,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.Results"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/repo.LabelOut"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.LabelOut"
+                            }
                         }
                     }
                 }
@@ -1109,22 +1097,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.Results"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/repo.LocationOutCount"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.LocationOutCount"
+                            }
                         }
                     }
                 }
@@ -1189,22 +1165,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.Results"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/repo.TreeItem"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.TreeItem"
+                            }
                         }
                     }
                 }
@@ -1329,22 +1293,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.Results"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/repo.NotifierOut"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.NotifierOut"
+                            }
                         }
                     }
                 }
@@ -1615,6 +1567,15 @@
                         "description": "string",
                         "name": "password",
                         "in": "formData"
+                    },
+                    {
+                        "description": "Login Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.LoginForm"
+                        }
                     }
                 ],
                 "responses": {
@@ -1711,7 +1672,7 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/server.Result"
+                                    "$ref": "#/definitions/v1.Wrapped"
                                 },
                                 {
                                     "type": "object",
@@ -1756,7 +1717,7 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/server.Result"
+                                    "$ref": "#/definitions/v1.Wrapped"
                                 },
                                 {
                                     "type": "object",
@@ -1793,6 +1754,20 @@
         }
     },
     "definitions": {
+        "mid.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "repo.DocumentOut": {
             "type": "object",
             "properties": {
@@ -1894,9 +1869,13 @@
         },
         "repo.ItemCreate": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 1000
                 },
                 "labelIds": {
                     "type": "array",
@@ -1909,7 +1888,9 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "parentId": {
                     "type": "string",
@@ -2200,15 +2181,21 @@
         },
         "repo.LabelCreate": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "color": {
                     "type": "string"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 }
             }
         },
@@ -2397,6 +2384,9 @@
         },
         "repo.MaintenanceEntryCreate": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "completedDate": {
                     "description": "Sold",
@@ -2655,39 +2645,6 @@
                 }
             }
         },
-        "server.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                },
-                "fields": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "server.Result": {
-            "type": "object",
-            "properties": {
-                "details": {},
-                "error": {
-                    "type": "boolean"
-                },
-                "item": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "server.Results": {
-            "type": "object",
-            "properties": {
-                "items": {}
-            }
-        },
         "services.UserRegistration": {
             "type": "object",
             "properties": {
@@ -2783,12 +2740,17 @@
         },
         "v1.GroupInvitationCreate": {
             "type": "object",
+            "required": [
+                "uses"
+            ],
             "properties": {
                 "expiresAt": {
                     "type": "string"
                 },
                 "uses": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
                 }
             }
         },
@@ -2796,6 +2758,20 @@
             "type": "object",
             "properties": {
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.LoginForm": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "stayLoggedIn": {
+                    "type": "boolean"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -2812,6 +2788,12 @@
                 "token": {
                     "type": "string"
                 }
+            }
+        },
+        "v1.Wrapped": {
+            "type": "object",
+            "properties": {
+                "item": {}
             }
         }
     },

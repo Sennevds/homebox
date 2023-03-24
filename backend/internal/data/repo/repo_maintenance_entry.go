@@ -2,10 +2,13 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hay-kot/homebox/backend/internal/data/ent"
+	"github.com/hay-kot/homebox/backend/internal/data/ent/group"
+	"github.com/hay-kot/homebox/backend/internal/data/ent/item"
 	"github.com/hay-kot/homebox/backend/internal/data/ent/maintenanceentry"
 	"github.com/hay-kot/homebox/backend/internal/data/types"
 )
@@ -16,25 +19,40 @@ import (
 type MaintenanceEntryRepository struct {
 	db *ent.Client
 }
-type (
-	MaintenanceEntryCreate struct {
-		CompletedDate types.Date `json:"completedDate"`
-		ScheduledDate types.Date `json:"scheduledDate"`
-		Name          string     `json:"name"`
-		Description   string     `json:"description"`
-		Cost          float64    `json:"cost,string"`
-	}
 
+type MaintenanceEntryCreate struct {
+	CompletedDate types.Date `json:"completedDate"`
+	ScheduledDate types.Date `json:"scheduledDate"`
+	Name          string     `json:"name" validate:"required"`
+	Description   string     `json:"description"`
+	Cost          float64    `json:"cost,string"`
+}
+
+func (mc MaintenanceEntryCreate) Validate() error {
+	if mc.CompletedDate.Time().IsZero() && mc.ScheduledDate.Time().IsZero() {
+		return errors.New("either completedDate or scheduledDate must be set")
+	}
+	return nil
+}
+
+type MaintenanceEntryUpdate struct {
+	CompletedDate types.Date `json:"completedDate"`
+	ScheduledDate types.Date `json:"scheduledDate"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	Cost          float64    `json:"cost,string"`
+}
+
+func (mu MaintenanceEntryUpdate) Validate() error {
+	if mu.CompletedDate.Time().IsZero() && mu.ScheduledDate.Time().IsZero() {
+		return errors.New("either completedDate or scheduledDate must be set")
+	}
+	return nil
+}
+
+type (
 	MaintenanceEntry struct {
 		ID            uuid.UUID  `json:"id"`
-		CompletedDate types.Date `json:"completedDate"`
-		ScheduledDate types.Date `json:"scheduledDate"`
-		Name          string     `json:"name"`
-		Description   string     `json:"description"`
-		Cost          float64    `json:"cost,string"`
-	}
-
-	MaintenanceEntryUpdate struct {
 		CompletedDate types.Date `json:"completedDate"`
 		ScheduledDate types.Date `json:"scheduledDate"`
 		Name          string     `json:"name"`
@@ -66,6 +84,27 @@ func mapMaintenanceEntry(entry *ent.MaintenanceEntry) MaintenanceEntry {
 	}
 }
 
+func (r *MaintenanceEntryRepository) GetScheduled(ctx context.Context, GID uuid.UUID, dt types.Date) ([]MaintenanceEntry, error) {
+	entries, err := r.db.MaintenanceEntry.Query().
+		Where(
+			maintenanceentry.HasItemWith(
+				item.HasGroupWith(group.ID(GID)),
+			),
+			maintenanceentry.ScheduledDate(dt.Time()),
+			maintenanceentry.Or(
+				maintenanceentry.DateIsNil(),
+				maintenanceentry.DateEQ(time.Time{}),
+			),
+		).
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return mapEachMaintenanceEntry(entries), nil
+}
+
 func (r *MaintenanceEntryRepository) Create(ctx context.Context, itemID uuid.UUID, input MaintenanceEntryCreate) (MaintenanceEntry, error) {
 	item, err := r.db.MaintenanceEntry.Create().
 		SetItemID(itemID).
@@ -92,16 +131,21 @@ func (r *MaintenanceEntryRepository) Update(ctx context.Context, ID uuid.UUID, i
 }
 
 type MaintenanceLogQuery struct {
-	Completed bool
-	Scheduled bool
+	Completed bool `json:"completed" schema:"completed"`
+	Scheduled bool `json:"scheduled" schema:"scheduled"`
 }
 
-func (r *MaintenanceEntryRepository) GetLog(ctx context.Context, itemID uuid.UUID, query MaintenanceLogQuery) (MaintenanceLog, error) {
+func (r *MaintenanceEntryRepository) GetLog(ctx context.Context, groupID, itemID uuid.UUID, query MaintenanceLogQuery) (MaintenanceLog, error) {
 	log := MaintenanceLog{
 		ItemID: itemID,
 	}
 
-	q := r.db.MaintenanceEntry.Query().Where(maintenanceentry.ItemID(itemID))
+	q := r.db.MaintenanceEntry.Query().Where(
+		maintenanceentry.ItemID(itemID),
+		maintenanceentry.HasItemWith(
+			item.HasGroupWith(group.IDEQ(groupID)),
+		),
+	)
 
 	if query.Completed {
 		q = q.Where(maintenanceentry.And(

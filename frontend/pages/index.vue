@@ -40,6 +40,7 @@
   const email = ref("");
   const password = ref("");
   const canRegister = ref(false);
+  const remember = ref(false);
 
   const groupToken = computed<string>({
     get() {
@@ -91,7 +92,7 @@
 
   async function login() {
     loading.value = true;
-    const { error } = await ctx.login(api, email.value, loginPassword.value);
+    const { error } = await ctx.login(api, email.value, loginPassword.value, remember.value);
 
     if (error) {
       toast.error("Invalid email or password");
@@ -132,7 +133,7 @@
             <AppLogo class="w-12 -mb-4" />
             x
           </h2>
-          <p class="ml-1 text-lg text-base-content/50">Track, Organize, and Manage your Shit.</p>
+          <p class="ml-1 text-lg text-base-content/50">Track, Organize, and Manage your Things.</p>
         </div>
         <div class="flex mt-6 sm:mt-0 gap-4 ml-auto text-neutral-content">
           <a class="tooltip" data-tip="Project Github" href="https://github.com/hay-kot/homebox" target="_blank">
@@ -196,8 +197,16 @@
                   </template>
                   <FormTextField v-model="email" label="Email" />
                   <FormPassword v-model="loginPassword" label="Password" />
-                  <div class="card-actions justify-end mt-2">
-                    <button type="submit" class="btn btn-primary" :class="loading ? 'loading' : ''" :disabled="loading">
+                  <div class="max-w-[140px]">
+                    <FormCheckbox v-model="remember" label="Remember Me" />
+                  </div>
+                  <div class="card-actions justify-end">
+                    <button
+                      type="submit"
+                      class="btn btn-primary btn-block"
+                      :class="loading ? 'loading' : ''"
+                      :disabled="loading"
+                    >
                       Login
                     </button>
                   </div>

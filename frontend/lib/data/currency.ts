@@ -2,12 +2,14 @@ export type Codes =
   | "AUD"
   | "BGN"
   | "CHF"
+  | "CZK"
   | "DKK"
   | "EUR"
   | "GBP"
   | "INR"
   | "JPY"
   | "NOK"
+  | "NZD"
   | "PLN"
   | "RMB"
   | "RON"
@@ -73,6 +75,12 @@ export const currencies: Currency[] = [
     name: "Norwegian Krone",
   },
   {
+    code: "NZD",
+    local: "en-NZ",
+    symbol: "NZ$",
+    name: "New Zealand Dollar",
+  },
+  {
     code: "PLN",
     local: "pl-PL",
     symbol: "zł",
@@ -119,5 +127,11 @@ export const currencies: Currency[] = [
     local: "de-CH",
     symbol: "chf",
     name: "Swiss Francs",
+  },
+  {
+    code: "CZK",
+    local: "cs-CZ",
+    symbol: "Kč",
+    name: "Czech Koruna",
   },
 ];

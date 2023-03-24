@@ -1,5 +1,14 @@
 basePath: /api
 definitions:
+  mid.ErrorResponse:
+    properties:
+      error:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   repo.DocumentOut:
     properties:
       id:
@@ -67,6 +76,7 @@ definitions:
   repo.ItemCreate:
     properties:
       description:
+        maxLength: 1000
         type: string
       labelIds:
         items:
@@ -76,10 +86,14 @@ definitions:
         description: Edges
         type: string
       name:
+        maxLength: 255
+        minLength: 1
         type: string
       parentId:
         type: string
         x-nullable: true
+    required:
+    - name
     type: object
   repo.ItemField:
     properties:
@@ -281,9 +295,14 @@ definitions:
       color:
         type: string
       description:
+        maxLength: 255
         type: string
       name:
+        maxLength: 255
+        minLength: 1
         type: string
+    required:
+    - name
     type: object
   repo.LabelOut:
     properties:
@@ -421,6 +440,8 @@ definitions:
       scheduledDate:
         description: Sold
         type: string
+    required:
+    - name
     type: object
   repo.MaintenanceEntryUpdate:
     properties:
@@ -579,28 +600,6 @@ definitions:
       value:
         type: number
     type: object
-  server.ErrorResponse:
-    properties:
-      error:
-        type: string
-      fields:
-        additionalProperties:
-          type: string
-        type: object
-    type: object
-  server.Result:
-    properties:
-      details: {}
-      error:
-        type: boolean
-      item: {}
-      message:
-        type: string
-    type: object
-  server.Results:
-    properties:
-      items: {}
-    type: object
   services.UserRegistration:
     properties:
       email:
@@ -666,11 +665,24 @@ definitions:
       expiresAt:
         type: string
       uses:
+        maximum: 100
+        minimum: 1
         type: integer
+    required:
+    - uses
     type: object
   v1.ItemAttachmentToken:
     properties:
       token:
+        type: string
+    type: object
+  v1.LoginForm:
+    properties:
+      password:
+        type: string
+      stayLoggedIn:
+        type: boolean
+      username:
         type: string
     type: object
   v1.TokenResponse:
@@ -682,10 +694,14 @@ definitions:
       token:
         type: string
     type: object
+  v1.Wrapped:
+    properties:
+      item: {}
+    type: object
 info:
   contact:
     name: Don't
-  description: Track, Manage, and Organize your Shit.
+  description: Track, Manage, and Organize your Things.
   license:
     name: MIT
   title: Homebox API
@@ -932,8 +948,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/repo.ItemSummary'
       security:
@@ -1036,7 +1052,7 @@ paths:
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/server.ErrorResponse'
+            $ref: '#/definitions/mid.ErrorResponse'
       security:
       - Bearer: []
       summary: Create Item Attachment
@@ -1140,8 +1156,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/repo.MaintenanceEntry'
       security:
@@ -1251,14 +1267,9 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/server.Results'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/repo.LabelOut'
-                  type: array
-              type: object
+            items:
+              $ref: '#/definitions/repo.LabelOut'
+            type: array
       security:
       - Bearer: []
       summary: Get All Labels
@@ -1353,14 +1364,9 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/server.Results'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/repo.LocationOutCount'
-                  type: array
-              type: object
+            items:
+              $ref: '#/definitions/repo.LocationOutCount'
+            type: array
       security:
       - Bearer: []
       summary: Get All Locations
@@ -1461,14 +1467,9 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/server.Results'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/repo.TreeItem'
-                  type: array
-              type: object
+            items:
+              $ref: '#/definitions/repo.TreeItem'
+            type: array
       security:
       - Bearer: []
       summary: Get Locations Tree
@@ -1482,14 +1483,9 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/server.Results'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/repo.NotifierOut'
-                  type: array
-              type: object
+            items:
+              $ref: '#/definitions/repo.NotifierOut'
+            type: array
       security:
       - Bearer: []
       summary: Get Notifiers
@@ -1655,6 +1651,12 @@ paths:
         in: formData
         name: password
         type: string
+      - description: Login Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.LoginForm'
       produces:
       - application/json
       responses:
@@ -1725,7 +1727,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/server.Result'
+            - $ref: '#/definitions/v1.Wrapped'
             - properties:
                 item:
                   $ref: '#/definitions/repo.UserOut'
@@ -1750,7 +1752,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/server.Result'
+            - $ref: '#/definitions/v1.Wrapped'
             - properties:
                 item:
                   $ref: '#/definitions/repo.UserUpdate'
